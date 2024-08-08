@@ -1,0 +1,135 @@
+
+/* Define CSS variables for cell colors */
+:root {
+  --cell-default-color:#b9b875; /* Default cell color */
+  --cell-hover-color: #a3a080; /* Hover color */
+  --cell-border-color: #000000; /* Border color on hover */
+
+  --game-container-color:rgb(43, 43, 43);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: var(--game-container-color)/* Background color for the page */
+}
+
+#game-container {
+  background-image: url('./assets/gamecontainerbg.png');
+  display:flex;
+  position: relative; /* Ensure it is positioned relative to contain the Phaser canvas */
+  width: 1300px; /* Game container width*/
+  height: 700px; /*Game container height *//* Background color for the game container */
+  border: 2px solid #000000; /* Border around the game container */
+  overflow: hidden; /* Hide any overflow from the Phaser canvas */
+}
+
+canvas {
+  position: absolute; /* Position the canvas within the container */
+  display: block; /* Ensure the canvas is displayed as a block element */
+  top: 50%; /* Center vertically */
+  left: 50%; /* Center horizontally */
+  transform: translate(-50%, -50%); /* Adjust position to center */
+  z-index: 5; /* Ensure the canvas is on top */
+  background-color: green /* Background color for the canvas */
+}
+
+
+/* .player {
+  width: 350px;
+  height: 400px;
+  display: flex;
+  margin:10px;
+  border: none; 
+  position: absolute;
+  z-index:9;
+  background-color: rgb(255, 255, 255) 
+
+
+  .player-left {
+  position: absolute;
+  left: 0;
+  top: 100px;
+}
+
+.player-right {
+  position: absolute;
+  right: 0;
+  top: 100px;
+}
+
+
+.conesgrid{
+  display: grid;
+  grid-gap:10px;
+  grid-template-columns: repeat(3,100px);
+  grid-template-rows: repeat(3,100px);
+  
+}
+
+.conesgrid >div{
+  padding: 10px;
+  background-color: rgb(109, 109, 109);
+  display: grid;
+  align-items: center;
+  justify-content: center;
+
+}
+
+.heading-container {
+  position: absolute; 
+  top: 10px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  z-index: 15; 
+}
+
+.heading-container h2 {
+  margin: 0;
+  color: #ffffff; 
+  background-color: rgb(0, 0, 0); 
+  padding: 5px;
+  border-radius: 5px;
+  font-size: 24px;
+}
+
+.heading{
+  font-size: 40px;
+  margin:0px;
+  bottom:5px;
+  font-weight:900;
+  left: 50%;
+  padding: 5px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.container {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+}
+
+.responsive_image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #ccc; 
+  border-radius: 8px; 
+}
+
+.responsive_image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.small {
+  max-width: 200px; 
+  height: auto;
+} */
