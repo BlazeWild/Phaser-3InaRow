@@ -11,7 +11,7 @@ let currentlySelectedSprite = null; // To track the currently selected sprite
 
 
 
-const snapThreshold = 50;// for snapping the cones on the grid
+const snapThreshold = 60;// for snapping the cones on the grid
 
 
 // Function to handle dragging of sprites
@@ -26,6 +26,12 @@ export function onDrag(pointer, gameObject, dragX, dragY) {
 
 // Function to handle the end of dragging
 export function onDragEnd(pointer, gameObject) {
+    // Check if the sprite has already been snapped
+    if (gameObject.getData('snapped')) {
+        console.log('Sprite is immovable.');
+        return; // Do not move the sprite if it is immovable
+    }
+
     const color = gameObject.name; // "blue" or "red"
     const snapPoints = snapPositions[color]; // Get the corresponding snap points
     let closestDistance = Infinity;
@@ -47,6 +53,15 @@ export function onDragEnd(pointer, gameObject) {
     if (closestDistance <= minimumSnapDistance) {
         gameObject.x = closestSnapPoint.x;
         gameObject.y = closestSnapPoint.y;
+
+        // Mark the sprite as 'snapped' and disable interactions
+        gameObject.setData('snapped', true);
+        gameObject.input.draggable = false;  // Disable dragging
+        gameObject.disableInteractive();     // Completely disable interaction
+
+        // Deselect the sprite after snapping
+        clearCurrentlySelectedSprite();
+        removeClickEffect(gameObject);
     } else {
         // Return to the initial position if not within snapping range
         gameObject.x = gameObject.input.dragStartX;
@@ -70,58 +85,56 @@ function getPositionFromCellNumber(cellNumber, color) {
     return cellPosition;
 }
 
+// function snapToNearestCell(x, y, sprite) {
+//     // Find the nearest cell and update sprite position
+//     // const snapPosition =    findNearestCell(x, y); // Replace with your actual snapping logic
+//     // // const snapPosition = {x,y};
+//     // sprite.setPosition(snapPosition.x, snapPosition.y);
+//     // sprite.setData('snapped', true); // Mark the sprite as snapped
 
-// Function to snap a sprite to the cell position based on the clicked cell
-function snapToNearestCell(clickX, clickY, sprite) {
-    if (!sprite) return;
+//     // // Log the snapped position
+//     // console.log(`Sprite snapped to cell: ${snapPosition.cellNumber}`, snapPosition);
 
-    const color = sprite.name; // "blue" or "red"
-    const cellNumber = getCellNumberFromPosition(clickX, clickY); // Determine the cell number from the click position
-    const cellPosition = getPositionFromCellNumber(cellNumber, color); // Get position from JSON
-
-    if (cellPosition) {
-        sprite.setPosition(cellPosition.x, cellPosition.y);
-        console.log(`Sprite snapped to position ${cellNumber}:`, cellPosition);
-    } else {
-        console.log(`No snap position found for cell number ${cellNumber}`);
-    }
-}
+//     // Clear the selected sprite after snapping
+//     clearCurrentlySelectedSprite();
+//     removeClickEffect(sprite);
+// }
 
 
-
-// Function to handle sprite clicks
+// Function to handle sprite click events
 export function onSpriteClick(sprite, pointer) {
-    // Check if the sprite is already selected
-    const isSelected = sprite.getData('clicked');
+    // Check if the sprite is already snapped to a cell
+    const isSnapped = sprite.getData('snapped');
 
+    if (isSnapped) {
+        console.log(`Sprite ${sprite.name} is snapped and cannot be clicked or dragged.`);
+        // Deselect the sprite if it is snapped and update its state
+        removeClickEffect(sprite);
+        sprite.setData('clicked', false);
+        clearCurrentlySelectedSprite(); // Clear the currently selected sprite
+        return; // Exit the function early, do nothing if the sprite is snapped
+    }
+
+    // Handle selection and deselection
     if (currentlySelectedSprite && currentlySelectedSprite !== sprite) {
         // Remove the click effect from the previously selected sprite
         removeClickEffect(currentlySelectedSprite);
         currentlySelectedSprite.setData('clicked', false);
     }
 
+    const isSelected = sprite.getData('clicked');
     if (isSelected) {
-        // Deselect the sprite if it was previously clicked
+        // Deselect the sprite if it was previously selected
         removeClickEffect(sprite);
         sprite.setData('clicked', false);
-        currentlySelectedSprite = null; // No sprite is currently selected
+        clearCurrentlySelectedSprite(); // Clear the currently selected sprite
     } else {
         // Select the new sprite and apply a click effect
         applyClickEffect(sprite);
         sprite.setData('clicked', true);
-        currentlySelectedSprite = sprite; // Set as selected
+        setCurrentlySelectedSprite(sprite); // Update the currently selected sprite
     }
-
-    // Handle snap to nearest grid position if a sprite is selected
-    if (currentlySelectedSprite) {
-        console.log('Snapping sprite to nearest grid:', currentlySelectedSprite.name);
-        snapToNearestCell(currentlySelectedSprite);
-    }
-
-    // Log the sprite click
-    console.log(`Sprite clicked: ${sprite.name}`);
 }
-
 
 
 // Getter function to access the currently selected sprite
@@ -182,6 +195,8 @@ function toggleClickEffect(sprite) {
         applyClickEffect(sprite);
         sprite.setData('clicked', true);
         currentlySelectedSprite = sprite;
+
+        
     }
 }
 
@@ -189,7 +204,7 @@ function toggleClickEffect(sprite) {
 
 // Function to apply a click effect on the sprite
 function applyClickEffect(sprite) {
-    sprite.setTint(0xb9bab9); // Apply a green tint for click effect
+    sprite.setTint(0x939393); // Apply a green tint for click effect
 }
 
 // Function to remove the click effect from the sprite
@@ -197,7 +212,7 @@ function removeClickEffect(sprite) {
     sprite.clearTint(); // Remove the tint
 }
 
-export { snapToNearestCell ,getCurrentlySelectedSprite, setCurrentlySelectedSprite, clearCurrentlySelectedSprite, toggleClickEffect, 
+export { getCurrentlySelectedSprite, setCurrentlySelectedSprite, clearCurrentlySelectedSprite, toggleClickEffect, 
     getPositionFromCellNumber,
     applyClickEffect, removeClickEffect};
 

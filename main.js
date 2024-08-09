@@ -1,5 +1,5 @@
 // import { onDrag, enableDragAndSnap} from "./game";
-import  {onDrag, onDragEnd,onSpriteClick, snapToNearestCell} from "./game";
+import  {onDrag, onDragEnd,onSpriteClick} from "./game";
 import { applyClickEffect, removeClickEffect, toggleClickEffect } from "./game";
 import {setCurrentlySelectedSprite,getCurrentlySelectedSprite, clearCurrentlySelectedSprite} from './game';
 import {getPositionFromCellNumber} from './game';
@@ -74,17 +74,17 @@ function create() {
   const background = this.add.image(config.width / 2, config.height / 2, 'background');
   background.setDisplaySize(config.width, config.height);  // Scale the background to fit the canvas
   background.setAlpha(0.8); // Make the background slightly transparent
-   
+
   function setupCone(cone) {
     cone.setInteractive({ draggable: true })
         .on('drag', (pointer, dragX, dragY) => onDrag(pointer, cone, dragX, dragY))
-        .on('dragend', (pointer) => onDragEnd(pointer, cone, snapPositions));
+        .on('dragend', (pointer) => onDragEnd(pointer, cone, snapPositions))
+        .on('pointerdown', (pointer) => onSpriteClick(cone, pointer)); // Use `onSpriteClick` for handling clicks
 
     applyHoverEffect(cone);
     removeHoverEffect(cone);
+}
 
-    // Handle sprite clicks
-    cone.on('pointerdown', (pointer) => handleSpriteClick(cone, pointer));}
 
   // Center the grid within the canvas
   const startX = (config.width - gridWidth) / 2;
@@ -263,7 +263,7 @@ function create() {
 function applyHoverEffect(sprite) {
   sprite.on('pointerover', function () {
     if (!sprite.getData('clicked')) { // Only apply hover effect if not clicked
-      this.setTint(0xb9bab9); // Apply a glow tint for hover effect
+      this.setTint('0x939393'); // Apply a glow tint for hover effect
     }
   });
 }
@@ -277,67 +277,37 @@ function removeHoverEffect(sprite) {
 }
 
 
-function getCellNumberFromPosition(x, y) {
-  const startX = (config.width - gridWidth) / 2;
-  const startY = (config.height - gridHeight) / 2 + 50; // Offset the grid vertically by 50 pixels
-
-  // Check each cell to find the one that contains the (x, y) position
-  for (let row = 0; row < gridSize; row++) {
-      for (let col = 0; col < gridSize; col++) {
-          const cellX = startX + col * cellSize + cellSize / 2;
-          const cellY = startY + row * cellSize + cellSize / 2;
-
-          // Check if the (x, y) position is within this cell
-          if (x >= cellX - cellSize / 2 && x <= cellX + cellSize / 2 &&
-              y >= cellY - cellSize / 2 && y <= cellY + cellSize / 2) {
-              // Return cell number (1 to 9)
-              return row * gridSize + col + 1;
-          }
-      }
-  }
-  // Return null if no cell contains the (x, y) position
-  return null;
-}
 
 
 
-function handleSpriteClick(sprite, pointer) {
-  toggleClickEffect(sprite);
-  clearCurrentlySelectedSprite(); // Clear previous selection
-  setCurrentlySelectedSprite(sprite); // Set the clicked sprite as the current selection
+// function handleSpriteClick(sprite, pointer) {
+//   toggleClickEffect(sprite);
+//   clearCurrentlySelectedSprite(); // Clear previous selection
+//   setCurrentlySelectedSprite(sprite); // Set the clicked sprite as the current selection
 
-  console.log('Sprite clicked:', sprite.name);
+//   console.log('Sprite clicked:', sprite.name);
 
-  // Get the click position relative to the grid
-  const gridPosition = getCellNumberFromPosition(pointer.x, pointer.y);
+//   // Get the click position relative to the grid
+//   const gridPosition = getCellNumberFromPosition(pointer.x, pointer.y);
 
-  // Log the clicked position and cell number
-  console.log('Clicked position:', { x: pointer.x, y: pointer.y });
-  console.log('Clicked cell number:', gridPosition);
+//   // Log the clicked position and cell number
+//   console.log('Clicked position:', { x: pointer.x, y: pointer.y });
+//   console.log('Clicked cell number:', gridPosition);
 
-  if (gridPosition !== null) {
-      // Get the snapping position from JSON
-      const cellPosition = getPositionFromCellNumber(gridPosition, sprite.name); // Call the function to get the position
+//   if (gridPosition !== null) {
+//       // Get the snapping position from JSON
+//       const cellPosition = getPositionFromCellNumber(gridPosition, sprite.name); // Call the function to get the position
 
-      if (cellPosition) {
-          sprite.setPosition(cellPosition.x, cellPosition.y); // Snap sprite to the cell position
-          console.log(`Sprite snapped to position ${gridPosition}:`, cellPosition);
-      } else {
-          console.log(`No snap position found for cell number ${gridPosition}`);
-      }
-  }
-}
-
-
-// Variables to track click positions
-let previousClickPosition = null;
-let currentClickPosition = null;
-let clickCount = 0; // To count the number of clicks
-let selectedSprite = null; // To track the currently selected sprite
+//       if (cellPosition) {
+//           sprite.setPosition(cellPosition.x, cellPosition.y); // Snap sprite to the cell position
+//           console.log(`Sprite snapped to position ${gridPosition}:`, cellPosition);
+//       } else {
+//           console.log(`No snap position found for cell number ${gridPosition}`);
+//       }
+//   }
+// }
 
 
-// without this the cell number is not being displayed
-// Function to handle cell clicks
 function handleCellClick(pointer, row, col) {
   const cellNumber = row * gridSize + col + 1;
   console.log('Cell clicked:', cellNumber);
@@ -350,13 +320,20 @@ function handleCellClick(pointer, row, col) {
       const color = selectedSprite.name; // "blue" or "red"
       console.log('Sprite color:', color);
 
-      // Get the snap position using the getPositionFromCellNumber function
-      const cellPosition = getPositionFromCellNumber(cellNumber, color);
+      const cellPosition = getPositionFromCellNumber(cellNumber, color); // Get the snap position from JSON
       console.log('Cell position from snapPositions:', cellPosition);
 
       if (cellPosition) {
           selectedSprite.setPosition(cellPosition.x, cellPosition.y);
           console.log(`Sprite snapped to cell ${cellNumber}:`, cellPosition);
+
+          // Disable dragging and clicking for the sprite
+          selectedSprite.input.draggable = false; // Disable dragging
+          selectedSprite.disableInteractive(); // Disable clicking
+
+          // Deselect the sprite
+          clearCurrentlySelectedSprite();
+          removeClickEffect(selectedSprite);
       } else {
           console.log(`No snap position found for cell number ${cellNumber}`);
       }
@@ -364,4 +341,3 @@ function handleCellClick(pointer, row, col) {
       console.log('No sprite selected');
   }
 }
-
