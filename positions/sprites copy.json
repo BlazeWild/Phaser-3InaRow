@@ -1,0 +1,25 @@
+{
+    "blueSprites": [
+      { "key": "S1_blue", "priority": 0 },
+      { "key": "S2_blue", "priority": 0 },
+      { "key": "S3_blue", "priority": 0 },
+      { "key": "M1_blue", "priority": 1 },
+      { "key": "M2_blue", "priority": 1 },
+      { "key": "M3_blue", "priority": 1 },
+      { "key": "L1_blue", "priority": 2 },
+      { "key": "L2_blue", "priority": 2 },
+      { "key": "L3_blue", "priority": 2 }
+    ],
+    "redSprites": [
+      { "key": "S1_red", "priority": 0 },
+      { "key": "S2_red", "priority": 0 },
+      { "key": "S3_red", "priority": 0 },
+      { "key": "M1_red", "priority": 1 },
+      { "key": "M2_red", "priority": 1 },
+      { "key": "M3_red", "priority": 1 },
+      { "key": "L1_red", "priority": 2 },
+      { "key": "L2_red", "priority": 2 },
+      { "key": "L3_red", "priority": 2 }
+    ]
+  }
+  

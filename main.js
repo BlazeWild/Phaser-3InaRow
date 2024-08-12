@@ -3,7 +3,16 @@ import  {onDrag, onDragEnd,onSpriteClick} from "./game";
 import { applyClickEffect, removeClickEffect, toggleClickEffect } from "./game";
 import {setCurrentlySelectedSprite,getCurrentlySelectedSprite, clearCurrentlySelectedSprite} from './game';
 import {getPositionFromCellNumber} from './game';
+import { isClickInsideCell, deselectSprite } from "./game";
+import { layerDepths, getSpritesInCell,placeSpriteOnTop } from "./gameLogic";
+
+//import spritesData from './positions/sprites.json'
+
 // import { currentlySelectedSprite } from "./game";
+
+
+//imprt soundManager.js
+import {preloadSounds, createSounds, playClickSound,playSnapSound} from './SoundManager';
 
 const config = {
   type: Phaser.AUTO,
@@ -15,7 +24,6 @@ const config = {
       create: create
   }
 };
-
 
 
 const game = new Phaser.Game(config);
@@ -35,13 +43,17 @@ const borderColorHover = getComputedStyle(document.documentElement).getPropertyV
 // let currentlySelectedSprite = null; // To track the currently selected sprite
 // export let currentlySelectedSprite = null; // To track the currently selected sprite
 
-function preload() {
+export function preload() {
+
+  preloadSounds(this);
+
   // Preload any assets here
   this.load.image('background', './assets/canvabg.jpg');
   this.load.image('player1Image', './assets/players/board.png'); 
   this.load.image('player2Image', './assets/players/board.png');
-  //load snapPositions.json file 
+  //load snapPositions and sprutes prior to the sprites
   this.load.json('snapPositions', './positions/snapPositions.json');
+  this.load.json('sprites', './positions/sprites.json');
 
   //BLUE
   this.load.image('S1_blue', './assets/images/S_blue.png');
@@ -65,9 +77,19 @@ function preload() {
   this.load.image('L3_red', './assets/images/L_red.png');
   }
 
-function create() {
+export function create() {
+
+  createSounds(this);
+// Add this global pointerdown listener in your scene's create method or wherever appropriate
+  this.input.on('pointerdown', handlePointerDown);
+
+
   // Load the snapPositions JSON file
   const snapPositions = this.cache.json.get('snapPositions');
+  // Load the sprites data from JSON
+  const spritesData = this.cache.json.get('sprites');
+  console.log('Sprites Data:', spritesData);
+  
   const maskGraphics = this.add.graphics();
 
   // Add the background image and set it to cover the entire canvas
@@ -76,6 +98,8 @@ function create() {
   background.setAlpha(0.8); // Make the background slightly transparent
 
   function setupCone(cone) {
+
+
     cone.setInteractive({ draggable: true })
         .on('drag', (pointer, dragX, dragY) => onDrag(pointer, cone, dragX, dragY))
         .on('dragend', (pointer) => onDragEnd(pointer, cone, snapPositions))
@@ -83,8 +107,10 @@ function create() {
 
     applyHoverEffect(cone);
     removeHoverEffect(cone);
-}
 
+    // Set the depth based on the layer
+
+}
 
   // Center the grid within the canvas
   const startX = (config.width - gridWidth) / 2;
@@ -126,6 +152,8 @@ function create() {
 
     const x_margin = 5;//offset from the edge of the canvas
     const y_margin = 10;
+    const coneContainerDepth = 1; // Cmmom Depth for the player containers
+
   
     //PLAYER 1 CONTAINER
     const player1Container = this.add.container();
@@ -134,12 +162,14 @@ function create() {
     player1Image.setDisplaySize(playerWidth, playerHeight); // Set the image size
     player1Image.setOrigin(0.5); // Center the image on its coordinates
     player1Container.add(player1Image);
+    player1Container.setDepth(coneContainerDepth); // Set the depth of the container
 
   //Create container for blue cones
   const blueConeContainer = this.add.container();
   player1Container.add(blueConeContainer);
+  blueConeContainer.setDepth(coneContainerDepth); // Set the depth of the container
     // Bring blueConeContainer to the top
-    blueConeContainer.bringToTop();
+  // blueConeContainer.bringToTop();
 
   //Claculate positions for the blue cones of 3x3 grid
   const coneSize = 95; //sizeof each cone sprite
@@ -147,11 +177,15 @@ function create() {
   const startXCones = -(playerWidth / 2) + coneSize/2 +  gridoffset;
   const startYCones = -(playerHeight / 2) + coneSize/2 + gridoffset+50;
 
-  const blueSprites = [
-    'S1_blue', 'S2_blue', 'S3_blue',
-    'M1_blue', 'M2_blue', 'M3_blue',
-    'L1_blue', 'L2_blue', 'L3_blue'
-  ];
+    // const blueSprites = [
+    //   'S1_blue', 'S2_blue', 'S3_blue',
+    //   'M1_blue', 'M2_blue', 'M3_blue',
+    //   'L1_blue', 'L2_blue', 'L3_blue'
+    // ];
+
+    // const blueSprites = spritesData.blueSprites.map(sprite=> sprite.key)
+  const blueSprites = spritesData.blueSprites;
+  console.log('Blue Sprites:', blueSprites);
 
   let index=0;
   const rowOffset = 25; //offset between rows
@@ -159,14 +193,22 @@ function create() {
     for (let col = 0; col < gridSize; col++) {
       const x = startXCones + col * coneSize;
       const y = startYCones + row * coneSize + row*rowOffset;
-      const spriteKey = blueSprites[index];
+
+      const spriteData = blueSprites[index];
+      const spriteKey = spriteData.key;
+      const layer = spriteData.layer;
+  
       const cone = this.add.image(x, y, spriteKey);
   
       cone.setDisplaySize(coneSize, coneSize);
       cone.setOrigin(0.5);
       cone.setName('blue');
 
-      blueConeContainer.add(cone);
+    // Set depth based on layer
+    const depth = layerDepths[layer];
+    cone.setDepth(depth);
+    console.log(`Depth for ${spriteKey} set to ${depth}`);
+    blueConeContainer.add(cone);
 
       setupCone.call(this, cone); 
       index++;
@@ -190,6 +232,7 @@ function create() {
   // PLAYER 2 CONTAINER
   const player2Container = this.add.container();
   player2Container.setPosition(config.width - playerWidth / 2 - x_margin, config.height / 2 + y_margin); // Set container position
+  player2Container.setDepth(coneContainerDepth); // Set the depth of the container
 
   // Add image to the Player 2 container
   const player2Image = this.add.image(0, 0, 'player2Image');
@@ -200,34 +243,47 @@ function create() {
   // Create container for red cones
   const redConeContainer = this.add.container();
   player2Container.add(redConeContainer);
-
+  redConeContainer.setDepth(coneContainerDepth); // Set the depth of the container
   // Calculate positions for the red cones of 3x3 grid
   const startXConesRed = -(playerWidth / 2) + coneSize/2 +  gridoffset;
   const startYConesRed = -(playerHeight / 2) + coneSize/2 + gridoffset+50;
 
-  const redSprites = [
-    'S1_red', 'S2_red', 'S3_red',
-    'M1_red', 'M2_red', 'M3_red',
-    'L1_red', 'L2_red', 'L3_red'
-  ];
+  // const redSprites = [
+  //   'S1_red', 'S2_red', 'S3_red',
+  //   'M1_red', 'M2_red', 'M3_red',
+  //   'L1_red', 'L2_red', 'L3_red'
+  // ];
+const redSprites = spritesData.redSprites;
+let indexRed = 0;
 
-  let indexRed=0;
-  for (let row = 0; row < gridSize; row++) {
-    for (let col = 0; col < gridSize; col++) {
-      const x = startXConesRed + col * coneSize;
-      const y = startYConesRed + row * coneSize + row*rowOffset;
-      const spriteKey = redSprites[indexRed];
-      const cone = this.add.image(x, y, spriteKey);
+for (let row = 0; row < gridSize; row++) {
+  for (let col = 0; col < gridSize; col++) {
+    const x = startXConesRed + col * coneSize;
+    const y = startYConesRed + row * coneSize + row * rowOffset;
 
-      cone.setDisplaySize(coneSize, coneSize);
-      cone.setOrigin(0.5);
-      cone.setName('red');
-      redConeContainer.add(cone);
+    const spriteData = redSprites[indexRed];
+    const spriteKey = spriteData.key;
+    const layer = spriteData.layer;
 
-      setupCone.call(this, cone); 
-      indexRed++;
-    }
+    const cone = this.add.image(x, y, spriteKey);
+
+    cone.setDisplaySize(coneSize, coneSize);
+    cone.setOrigin(0.5);
+    cone.setName('red');
+
+    // Set depth based on layer
+    const depth = layerDepths[layer];
+    cone.setDepth(depth);
+    console.log(`Depth for ${spriteKey} set to ${depth}`);
+   
+
+
+    redConeContainer.add(cone);
+
+    setupCone.call(this, cone);
+    indexRed++;
   }
+}
     
   // Create and position text separately
   const player2Text = this.add.text(0, -playerHeight / 2 + 65, 'Player 2', {
@@ -244,40 +300,35 @@ function create() {
   player2Text.setShadow(0, 0, '#ffffff', 10, false,false);
   player2Text.setStroke("#ffffff",1);
 
-      // Loop through and set up blue sprites
-      blueSprites.forEach(spriteData => {
-        const cone = this.add.image(spriteData.x, spriteData.y, spriteData.key);
-        cone.name = spriteData.name;
-        setupCone.call(this, cone);
-    });
+// // Example for setting up sprites
+// blueSprites.forEach((spriteData, index) => {
+//   const x = startXCones + (index % gridSize) * coneSize;
+//   const y = startYCones + Math.floor(index / gridSize) * coneSize + Math.floor(index / gridSize) * rowOffset;
 
-    // Loop through and set up red sprites
-    redSprites.forEach(spriteData => {
-        const cone = this.add.image(spriteData.x, spriteData.y, spriteData.key);
-        cone.name = spriteData.name;
-        setupCone.call(this, cone);
-    });
+//   const cone = this.add.image(x, y, spriteData.key);
+//   cone.name = spriteData.key;
+//   cone.layer = spriteData.layer;  // Attach the layer information to the cone
+//   console.log('layer for cone:', cone.layer);
+
+//   setupCone.call(this, cone);  // Pass the cone to the setup function
+//   blueConeContainer.add(cone); // Assuming you want to add it to a container
+// });
+
+
+// redSprites.forEach((spriteData, index) => {
+//   const x = startXCones + (index % gridSize) * coneSize; // Adjust this if the red cones should be placed differently
+//   const y = startYCones + Math.floor(index / gridSize) * coneSize + Math.floor(index / gridSize) * rowOffset;
+
+//   const cone = this.add.image(x, y, spriteData.key);
+//   cone.name = spriteData.key;
+//   cone.layer = spriteData.layer;  // Attach the layer information to the cone
+//   console.log('layer for cone:', cone.layer);
+
+//   setupCone.call(this, cone);  // Pass the cone to the setup function
+//   redConeContainer.add(cone); // Assuming you want to add it to a container
+// });
+
 }
-
-// Function to apply a glow effect on hover
-function applyHoverEffect(sprite) {
-  sprite.on('pointerover', function () {
-    if (!sprite.getData('clicked')) { // Only apply hover effect if not clicked
-      this.setTint('0x939393'); // Apply a glow tint for hover effect
-    }
-  });
-}
-// Function to remove the glow effect when not hovering
-function removeHoverEffect(sprite) {
-  sprite.on('pointerout', function () {
-    if (!sprite.getData('clicked')) { // Only remove tint if not clicked
-      this.clearTint(); // Remove the tint when not hovering
-    }
-  });
-}
-
-
-
 
 
 // function handleSpriteClick(sprite, pointer) {
@@ -308,6 +359,26 @@ function removeHoverEffect(sprite) {
 // }
 
 
+
+
+// Function to apply a glow effect on hover
+function applyHoverEffect(sprite) {
+  sprite.on('pointerover', function () {
+    if (!sprite.getData('clicked')) { // Only apply hover effect if not clicked
+      this.setTint('0x939393'); // Apply a glow tint for hover effect
+    }
+  });
+}
+// Function to remove the glow effect when not hovering
+function removeHoverEffect(sprite) {
+  sprite.on('pointerout', function () {
+    if (!sprite.getData('clicked')) { // Only remove tint if not clicked
+      this.clearTint(); // Remove the tint when not hovering
+    }
+  });
+}
+
+
 function handleCellClick(pointer, row, col) {
   const cellNumber = row * gridSize + col + 1;
   console.log('Cell clicked:', cellNumber);
@@ -327,6 +398,8 @@ function handleCellClick(pointer, row, col) {
           selectedSprite.setPosition(cellPosition.x, cellPosition.y);
           console.log(`Sprite snapped to cell ${cellNumber}:`, cellPosition);
 
+          playSnapSound({ volume: 0.5 }); // Play the snap sound
+
           // Disable dragging and clicking for the sprite
           selectedSprite.input.draggable = false; // Disable dragging
           selectedSprite.disableInteractive(); // Disable clicking
@@ -341,3 +414,31 @@ function handleCellClick(pointer, row, col) {
       console.log('No sprite selected');
   }
 }
+
+function handlePointerDown(pointer) {
+  // Get the currently selected sprite
+  const currentlySelectedSprite = getCurrentlySelectedSprite();
+  
+  // Log the currently selected sprite
+  console.log('Currently selected sprite:', currentlySelectedSprite ? currentlySelectedSprite.name : 'null');
+  
+  // If there's no currently selected sprite, do nothing
+  if (!currentlySelectedSprite) return;
+
+  // Check if the click is inside the currently selected sprite
+  const spriteBounds = currentlySelectedSprite.getBounds();
+  const clickInsideSprite = spriteBounds.contains(pointer.x, pointer.y);
+
+  // Check if the click is inside any cell
+  const clickInsideCell = isClickInsideCell(pointer.x, pointer.y);
+
+  // If the click is neither inside the sprite nor inside a cell, deselect the sprite
+  if (!clickInsideSprite && !clickInsideCell) {
+      console.log(`Sprite ${currentlySelectedSprite.name} is now deselected.`);
+      deselectSprite(currentlySelectedSprite);
+  } else {
+      // Optionally log if click is inside the sprite or cell
+      console.log('Click is inside sprite or cell.');
+  }
+}
+

@@ -101,38 +101,51 @@
 // // }
 
 
-// // Function to handle sprite click events
+// // Function to handle sprite clicks
 // export function onSpriteClick(sprite, pointer) {
-//     // Check if the sprite is already snapped to a cell
-//     const isSnapped = sprite.getData('snapped');
-
-//     if (isSnapped) {
-//         console.log(`Sprite ${sprite.name} is snapped and cannot be clicked or dragged.`);
-//         // Deselect the sprite if it is snapped and update its state
-//         removeClickEffect(sprite);
-//         sprite.setData('clicked', false);
-//         clearCurrentlySelectedSprite(); // Clear the currently selected sprite
-//         return; // Exit the function early, do nothing if the sprite is snapped
+//     if (isSpriteSnapped(sprite)) {
+//         handleSnappedSprite(sprite);
+//         return; // Exit if the sprite is already snapped
 //     }
 
-//     // Handle selection and deselection
 //     if (currentlySelectedSprite && currentlySelectedSprite !== sprite) {
-//         // Remove the click effect from the previously selected sprite
-//         removeClickEffect(currentlySelectedSprite);
-//         currentlySelectedSprite.setData('clicked', false);
+//         deselectSprite(currentlySelectedSprite);
 //     }
 
+//     toggleSpriteSelection(sprite);
+// }
+
+// // Check if the sprite is snapped
+// function isSpriteSnapped(sprite) {
+//     return sprite.getData('snapped');
+// }
+
+// // Handle actions for a snapped sprite
+// function handleSnappedSprite(sprite) {
+//     console.log(`Sprite ${sprite.name} is snapped and cannot be clicked or dragged.`);
+//     removeClickEffect(sprite);
+//     sprite.setData('clicked', false);
+//     currentlySelectedSprite = null; // Clear the currently selected sprite
+// }
+
+// // Deselect a previously selected sprite
+// function deselectSprite(sprite) {
+//     removeClickEffect(sprite);
+//     sprite.setData('clicked', false);
+// }
+
+// // Toggle selection of the current sprite
+// function toggleSpriteSelection(sprite) {
 //     const isSelected = sprite.getData('clicked');
+
 //     if (isSelected) {
-//         // Deselect the sprite if it was previously selected
 //         removeClickEffect(sprite);
 //         sprite.setData('clicked', false);
-//         clearCurrentlySelectedSprite(); // Clear the currently selected sprite
+//         currentlySelectedSprite = null;
 //     } else {
-//         // Select the new sprite and apply a click effect
 //         applyClickEffect(sprite);
 //         sprite.setData('clicked', true);
-//         setCurrentlySelectedSprite(sprite); // Update the currently selected sprite
+//         currentlySelectedSprite = sprite;
 //     }
 // }
 

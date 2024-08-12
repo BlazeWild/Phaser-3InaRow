@@ -1,5 +1,7 @@
 // Import the JSON file for snap positions
 import snapPositions from './positions/snapPositions.json';
+import { playClickSound ,playSnapSound} from './SoundManager';
+import { placeSpriteOnTop,getSpritesInCell } from './gameLogic';
 // import { currentlySelectedSprite } from './main';
 
 //incase of any error, please check the cenyres for calculation of 1,2,3,4....
@@ -54,6 +56,9 @@ export function onDragEnd(pointer, gameObject) {
         gameObject.x = closestSnapPoint.x;
         gameObject.y = closestSnapPoint.y;
 
+        // Play the snap sound effect
+        playSnapSound({ volume: 0.5 });
+
         // Mark the sprite as 'snapped' and disable interactions
         gameObject.setData('snapped', true);
         gameObject.input.draggable = false;  // Disable dragging
@@ -101,40 +106,91 @@ function getPositionFromCellNumber(cellNumber, color) {
 // }
 
 
-// Function to handle sprite click events
 export function onSpriteClick(sprite, pointer) {
-    // Check if the sprite is already snapped to a cell
-    const isSnapped = sprite.getData('snapped');
+    console.log(`Sprite clicked: ${sprite.texture.key}, Depth: ${sprite.depth}`);
 
-    if (isSnapped) {
-        console.log(`Sprite ${sprite.name} is snapped and cannot be clicked or dragged.`);
-        // Deselect the sprite if it is snapped and update its state
-        removeClickEffect(sprite);
-        sprite.setData('clicked', false);
-        clearCurrentlySelectedSprite(); // Clear the currently selected sprite
-        return; // Exit the function early, do nothing if the sprite is snapped
+
+    playClickSound({ volume: 0.5 }); // Play the click sound
+    console.log('Sprite clicked:', sprite.name);
+
+    if (isSpriteSnapped(sprite)) {
+        console.log(`Sprite ${sprite.name} is already snapped and immovable.`);
+        handleSnappedSprite(sprite);
+        return; // Exit if the sprite is already snapped
     }
 
-    // Handle selection and deselection
     if (currentlySelectedSprite && currentlySelectedSprite !== sprite) {
-        // Remove the click effect from the previously selected sprite
-        removeClickEffect(currentlySelectedSprite);
-        currentlySelectedSprite.setData('clicked', false);
+        console.log('Deselecting currently selected sprite:', currentlySelectedSprite.name);
+        deselectSprite(currentlySelectedSprite);
     }
 
+    console.log('Toggling selection for sprite:', sprite.name);
+    toggleSpriteSelection(sprite);
+}
+
+// Check if the sprite is snapped
+function isSpriteSnapped(sprite) {
+    return sprite.getData('snapped');
+}
+
+// Handle actions for a snapped sprite
+function handleSnappedSprite(sprite) {
+    console.log(`Sprite ${sprite.name} is snapped and cannot be clicked or dragged.`);
+    removeClickEffect(sprite);
+    sprite.setData('clicked', false);
+    currentlySelectedSprite = null; // Clear the currently selected sprite
+}
+
+function deselectSprite(sprite) {
+    console.log(`Sprite ${sprite.name} is now deselected.`);
+    removeClickEffect(sprite);
+    sprite.setData('clicked', false);
+    clearCurrentlySelectedSprite();
+
+    // Log the state of the currently selected sprite after deselection
+    const newSelectedSprite = getCurrentlySelectedSprite();
+    console.log('Currently selected sprite after deselection:', newSelectedSprite ? newSelectedSprite.name : 'null');
+}
+
+
+
+// Update the toggleSpriteSelection function to select the sprite
+function toggleSpriteSelection(sprite) {
     const isSelected = sprite.getData('clicked');
+
     if (isSelected) {
         // Deselect the sprite if it was previously selected
-        removeClickEffect(sprite);
-        sprite.setData('clicked', false);
-        clearCurrentlySelectedSprite(); // Clear the currently selected sprite
+        deselectSprite(sprite);
     } else {
-        // Select the new sprite and apply a click effect
+        // Apply click effect and select the sprite
         applyClickEffect(sprite);
         sprite.setData('clicked', true);
-        setCurrentlySelectedSprite(sprite); // Update the currently selected sprite
+        currentlySelectedSprite = sprite;
+
+        // Set up a global click listener to handle deselection
+        sprite.scene.input.once('pointerdown', (pointer) => {
+            if (!sprite.getBounds().contains(pointer.x, pointer.y) && !isClickInsideCell(pointer.x, pointer.y)) {
+                // If the click is outside the sprite and not in a cell, deselect the sprite
+                deselectSprite(sprite);
+            }
+        });
     }
 }
+
+// Utility function to check if a click is inside a cell
+function isClickInsideCell(x, y) {
+    for (const color in snapPositions) {
+        for (const key in snapPositions[color]) {
+            const cellPosition = snapPositions[color][key];
+            const distance = Phaser.Math.Distance.Between(x, y, cellPosition.x, cellPosition.y);
+            if (distance <= snapThreshold) {
+                return true; // Click is inside a cell
+            }
+        }
+    }
+    return false; // Click is not inside any cell
+}
+
 
 
 // Getter function to access the currently selected sprite
@@ -212,7 +268,7 @@ function removeClickEffect(sprite) {
     sprite.clearTint(); // Remove the tint
 }
 
-export { getCurrentlySelectedSprite, setCurrentlySelectedSprite, clearCurrentlySelectedSprite, toggleClickEffect, 
+export { deselectSprite,isClickInsideCell,getCurrentlySelectedSprite, setCurrentlySelectedSprite, clearCurrentlySelectedSprite, toggleClickEffect, 
     getPositionFromCellNumber,
     applyClickEffect, removeClickEffect};
 

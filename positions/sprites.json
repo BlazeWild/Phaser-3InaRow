@@ -1,0 +1,24 @@
+{
+  "blueSprites": [
+    { "key": "S1_blue", "layer": "S" },
+    { "key": "S2_blue", "layer": "S" },
+    { "key": "S3_blue", "layer": "S" },
+    { "key": "M1_blue", "layer": "M" },
+    { "key": "M2_blue", "layer": "M" },
+    { "key": "M3_blue", "layer": "M" },
+    { "key": "L1_blue", "layer": "L" },
+    { "key": "L2_blue", "layer": "L" },
+    { "key": "L3_blue", "layer": "L" }
+  ],
+  "redSprites": [
+    { "key": "S1_red", "layer": "S" },
+    { "key": "S2_red", "layer": "S" },
+    { "key": "S3_red", "layer": "S" },
+    { "key": "M1_red", "layer": "M" },
+    { "key": "M2_red", "layer": "M" },
+    { "key": "M3_red", "layer": "M" },
+    { "key": "L1_red", "layer": "L" },
+    { "key": "L2_red", "layer": "L" },
+    { "key": "L3_red", "layer": "L" }
+  ]
+}
