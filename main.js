@@ -4,7 +4,7 @@ import { applyClickEffect, removeClickEffect, toggleClickEffect } from "./game";
 import {setCurrentlySelectedSprite,getCurrentlySelectedSprite, clearCurrentlySelectedSprite} from './game';
 import {getPositionFromCellNumber} from './game';
 import { isClickInsideCell, deselectSprite } from "./game";
-import { layerDepths, getSpritesInCell,placeSpriteOnTop } from "./gameLogic";
+import { layerDepths} from "./gameLogic";
 
 //import spritesData from './positions/sprites.json'
 
@@ -152,138 +152,109 @@ export function create() {
 
     const x_margin = 5;//offset from the edge of the canvas
     const y_margin = 10;
-    const coneContainerDepth = 1; // Cmmom Depth for the player containers
 
-  
-    //PLAYER 1 CONTAINER
-    const player1Container = this.add.container();
-    player1Container.setPosition(playerWidth / 2 + x_margin, config.height / 2 + y_margin); // Set container position
-    const player1Image = this.add.image(0, 0, 'player1Image');
-    player1Image.setDisplaySize(playerWidth, playerHeight); // Set the image size
-    player1Image.setOrigin(0.5); // Center the image on its coordinates
-    player1Container.add(player1Image);
-    player1Container.setDepth(coneContainerDepth); // Set the depth of the container
 
-  //Create container for blue cones
-  const blueConeContainer = this.add.container();
-  player1Container.add(blueConeContainer);
-  blueConeContainer.setDepth(coneContainerDepth); // Set the depth of the container
-    // Bring blueConeContainer to the top
-  // blueConeContainer.bringToTop();
+// Define base depths for containers
+const player1ContainerDepth = 5;  // depth for Player 1 container
+const player2ContainerDepth = 5;  // depth for Player 2 container
 
-  //Claculate positions for the blue cones of 3x3 grid
-  const coneSize = 95; //sizeof each cone sprite
-  const gridoffset = 110; //offset from the edge of the grid
-  const startXCones = -(playerWidth / 2) + coneSize/2 +  gridoffset;
-  const startYCones = -(playerHeight / 2) + coneSize/2 + gridoffset+50;
+// Define base depth offset for sprites
+const spriteDepthOffset = 0; // Offset to ensure sprites render above containers
 
-    // const blueSprites = [
-    //   'S1_blue', 'S2_blue', 'S3_blue',
-    //   'M1_blue', 'M2_blue', 'M3_blue',
-    //   'L1_blue', 'L2_blue', 'L3_blue'
-    // ];
+// PLAYER 1 CONTAINER
+const player1Container = this.add.container();
+player1Container.setPosition(playerWidth / 2 + x_margin, config.height / 2 + y_margin);
+const player1Image = this.add.image(0, 0, 'player1Image');
+player1Image.setDisplaySize(playerWidth, playerHeight);
+player1Image.setOrigin(0.5);
+player1Container.add(player1Image);
+player1Container.setDepth(player1ContainerDepth);
 
-    // const blueSprites = spritesData.blueSprites.map(sprite=> sprite.key)
-  const blueSprites = spritesData.blueSprites;
-  console.log('Blue Sprites:', blueSprites);
+// PLAYER 2 CONTAINER
+const player2Container = this.add.container();
+player2Container.setPosition(config.width - playerWidth / 2 - x_margin, config.height / 2 + y_margin);
+player2Container.setDepth(player2ContainerDepth);
+const player2Image = this.add.image(0, 0, 'player2Image');
+player2Image.setDisplaySize(playerWidth, playerHeight);
+player2Image.setOrigin(0.5);
+player2Container.add(player2Image);
 
-  let index=0;
-  const rowOffset = 25; //offset between rows
-  for (let row = 0; row < gridSize; row++) {
+// Size of each cone sprite
+const coneSize = 95;
+const gridoffset = 110; // offset from the edge of the grid
+const rowOffset = 25; // offset between rows
+
+// Calculate positions for blue sprites directly on the canvas
+const startXCones = player1Container.x - playerWidth / 2 + coneSize / 2 + gridoffset;
+const startYCones = player1Container.y - playerHeight / 2 + coneSize / 2 + gridoffset + 50;
+
+const blueSprites = spritesData.blueSprites;
+let index = 0;
+for (let row = 0; row < gridSize; row++) {
     for (let col = 0; col < gridSize; col++) {
-      const x = startXCones + col * coneSize;
-      const y = startYCones + row * coneSize + row*rowOffset;
+        const x = startXCones + col * coneSize;
+        const y = startYCones + row * coneSize + row * rowOffset;
 
-      const spriteData = blueSprites[index];
-      const spriteKey = spriteData.key;
-      const layer = spriteData.layer;
-  
-      const cone = this.add.image(x, y, spriteKey);
-  
-      cone.setDisplaySize(coneSize, coneSize);
-      cone.setOrigin(0.5);
-      cone.setName('blue');
+        const spriteData = blueSprites[index];
+        const spriteKey = spriteData.key;
+        const layer = spriteData.layer;
 
-    // Set depth based on layer
-    const depth = layerDepths[layer];
-    cone.setDepth(depth);
-    console.log(`Depth for ${spriteKey} set to ${depth}`);
-    blueConeContainer.add(cone);
+        const cone = this.add.image(x, y, spriteKey);
+        cone.setDisplaySize(coneSize, coneSize);
+        cone.setOrigin(0.5);
+        cone.setName('blue');
 
-      setupCone.call(this, cone); 
-      index++;
+        const depth = player1ContainerDepth + spriteDepthOffset + layerDepths[layer];
+        cone.setDepth(depth);
+
+        setupCone.call(this, cone);
+        index++;
     }
-  }
+}
 
-  // Create and position text separately
-    const player1Text = this.add.text(0, -playerHeight / 2 + 65, 'Player 1', {
-      fontFamily: 'woodfont', // Font family
-      fontSize: '50px',
-      fontWeight: 'bold', // Font weight for bold text
-      fill: '#008bff', // Text color
-      align: 'center' // Text alignment
-    });
-    player1Text.setOrigin(0.5, 0); // Center horizontally and align text to the top
-    player1Container.add(player1Text);
-    player1Text.setStroke("#ffffff",1);
-  
+// Calculate positions for red sprites directly on the canvas
+const startXConesRed = player2Container.x - playerWidth / 2 + coneSize / 2 + gridoffset;
+const startYConesRed = player2Container.y - playerHeight / 2 + coneSize / 2 + gridoffset + 50;
 
-
-  // PLAYER 2 CONTAINER
-  const player2Container = this.add.container();
-  player2Container.setPosition(config.width - playerWidth / 2 - x_margin, config.height / 2 + y_margin); // Set container position
-  player2Container.setDepth(coneContainerDepth); // Set the depth of the container
-
-  // Add image to the Player 2 container
-  const player2Image = this.add.image(0, 0, 'player2Image');
-  player2Image.setDisplaySize(playerWidth, playerHeight); // Set the image size
-  player2Image.setOrigin(0.5); // Center the image on its coordinates
-  player2Container.add(player2Image);
-
-  // Create container for red cones
-  const redConeContainer = this.add.container();
-  player2Container.add(redConeContainer);
-  redConeContainer.setDepth(coneContainerDepth); // Set the depth of the container
-  // Calculate positions for the red cones of 3x3 grid
-  const startXConesRed = -(playerWidth / 2) + coneSize/2 +  gridoffset;
-  const startYConesRed = -(playerHeight / 2) + coneSize/2 + gridoffset+50;
-
-  // const redSprites = [
-  //   'S1_red', 'S2_red', 'S3_red',
-  //   'M1_red', 'M2_red', 'M3_red',
-  //   'L1_red', 'L2_red', 'L3_red'
-  // ];
 const redSprites = spritesData.redSprites;
 let indexRed = 0;
-
 for (let row = 0; row < gridSize; row++) {
-  for (let col = 0; col < gridSize; col++) {
-    const x = startXConesRed + col * coneSize;
-    const y = startYConesRed + row * coneSize + row * rowOffset;
+    for (let col = 0; col < gridSize; col++) {
+        const x = startXConesRed + col * coneSize;
+        const y = startYConesRed + row * coneSize + row * rowOffset;
 
-    const spriteData = redSprites[indexRed];
-    const spriteKey = spriteData.key;
-    const layer = spriteData.layer;
+        const spriteData = redSprites[indexRed];
+        const spriteKey = spriteData.key;
+        const layer = spriteData.layer;
 
-    const cone = this.add.image(x, y, spriteKey);
+        const cone = this.add.image(x, y, spriteKey);
+        cone.setDisplaySize(coneSize, coneSize);
+        cone.setOrigin(0.5);
+        cone.setName('red');
 
-    cone.setDisplaySize(coneSize, coneSize);
-    cone.setOrigin(0.5);
-    cone.setName('red');
+        const depth = player2ContainerDepth + spriteDepthOffset + layerDepths[layer];
+        cone.setDepth(depth);
 
-    // Set depth based on layer
-    const depth = layerDepths[layer];
-    cone.setDepth(depth);
-    console.log(`Depth for ${spriteKey} set to ${depth}`);
-   
-
-
-    redConeContainer.add(cone);
-
-    setupCone.call(this, cone);
-    indexRed++;
-  }
+        setupCone.call(this, cone);
+        indexRed++;
+    }
 }
+
+    //TEXTS
+  
+  // Create and position text separately
+  const player1Text = this.add.text(0, -playerHeight / 2 + 65, 'Player 1', {
+    fontFamily: 'woodfont', // Font family
+    fontSize: '50px',
+    fontWeight: 'bold', // Font weight for bold text
+    fill: '#008bff', // Text color
+    align: 'center' // Text alignment
+  });
+  player1Text.setOrigin(0.5, 0); // Center horizontally and align text to the top
+  player1Container.add(player1Text);
+  player1Text.setStroke("#ffffff",1);
+
+
     
   // Create and position text separately
   const player2Text = this.add.text(0, -playerHeight / 2 + 65, 'Player 2', {
@@ -299,34 +270,6 @@ for (let row = 0; row < gridSize; row++) {
   // Apply a shadow to the text to create a glowing effect
   player2Text.setShadow(0, 0, '#ffffff', 10, false,false);
   player2Text.setStroke("#ffffff",1);
-
-// // Example for setting up sprites
-// blueSprites.forEach((spriteData, index) => {
-//   const x = startXCones + (index % gridSize) * coneSize;
-//   const y = startYCones + Math.floor(index / gridSize) * coneSize + Math.floor(index / gridSize) * rowOffset;
-
-//   const cone = this.add.image(x, y, spriteData.key);
-//   cone.name = spriteData.key;
-//   cone.layer = spriteData.layer;  // Attach the layer information to the cone
-//   console.log('layer for cone:', cone.layer);
-
-//   setupCone.call(this, cone);  // Pass the cone to the setup function
-//   blueConeContainer.add(cone); // Assuming you want to add it to a container
-// });
-
-
-// redSprites.forEach((spriteData, index) => {
-//   const x = startXCones + (index % gridSize) * coneSize; // Adjust this if the red cones should be placed differently
-//   const y = startYCones + Math.floor(index / gridSize) * coneSize + Math.floor(index / gridSize) * rowOffset;
-
-//   const cone = this.add.image(x, y, spriteData.key);
-//   cone.name = spriteData.key;
-//   cone.layer = spriteData.layer;  // Attach the layer information to the cone
-//   console.log('layer for cone:', cone.layer);
-
-//   setupCone.call(this, cone);  // Pass the cone to the setup function
-//   redConeContainer.add(cone); // Assuming you want to add it to a container
-// });
 
 }
 

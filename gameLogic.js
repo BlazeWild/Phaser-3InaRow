@@ -6,44 +6,72 @@ export const layerDepths = {
     'S': 10,
     'M': 20,
     'L': 30
-  };
-  
+};
 
-// Initialize cell structure
-const cells = {
-    1: { sprites: [] },
-    2: { sprites: [] },
-    3: { sprites: [] },
-    4: { sprites: [] },
-    5: { sprites: [] },
-    6: { sprites: [] },
-    7: { sprites: [] },
-    8: { sprites: [] },
-    9: { sprites: [] }
-  };
+// Define the initial cell states
+const initialCellState = {
+    "cell1": [],
+    "cell2": [],
+    "cell3": [],
+    "cell4": [],
+    "cell5": [],
+    "cell6": [],
+    "cell7": [],
+    "cell8": [],
+    "cell9": []
+};
 
+// // 1. Initializing the Cells on Game Reload
+// // Function to initialize cells on game reload
+// function initializeCells() {
+//     writeJSONToFile('positions/cellState.json', initialCellState);
+// }
 
+// initializeCells();
 
-// Function to get all sprites in a specific cell
-export function getSpritesInCell(scene, cell, coneSize, gridSize) {
-    return scene.children.getAll().filter(sprite => {
-        return Math.floor(sprite.x / coneSize) === cell % gridSize &&
-               Math.floor(sprite.y / coneSize) === Math.floor(cell / gridSize);
-    });
-}
+// // 2. Updating the JSON File on Sprite Placement
+// // Function to update cell data in the JSON file
+// function updateCellData(cellNumber, sprite) {
+//     // Read the current state from the JSON file
+//     const cellState = readJSONFromFile('positions/cellState.json');
 
-export function placeSpriteOnTop(sprite, existingSprites) {
-    const spriteType = sprite.name.charAt(0); // Get sprite type (S, M, L)
-    const zIndex = spriteLayers[spriteType];
+//     // Ensure the cell exists in the state
+//     if (!cellState[`cell${cellNumber}`]) {
+//         cellState[`cell${cellNumber}`] = [];
+//     }
 
-    existingSprites.forEach(s => {
-        const existingZIndex = spriteLayers[s.name.charAt(0)];
-        if (existingZIndex < zIndex) {
-            s.setDepth(zIndex); // Move existing sprites below the new sprite
-        } else if (existingZIndex === zIndex) {
-            s.setDepth(zIndex); // Keep existing sprites at the same depth if they are the same type
-        }
-    });
+//     // Add the sprite to the cell stack
+//     cellState[`cell${cellNumber}`].push({
+//         name: sprite.name,
+//         color: sprite.color,
+//         priority: sprite.priority
+//     });
 
-    sprite.setDepth(zIndex); // Set the new sprite's depth
-}
+//     // Write the updated state back to the JSON file
+//     writeJSONToFile('positions/cellState.json', cellState);
+// }
+
+// // 3. Reading and Writing JSON Files
+// const fs = require('fs');
+
+// // Function to read JSON from a file
+// function readJSONFromFile(fileName) {
+//     try {
+//         const data = fs.readFileSync(fileName, 'utf8');
+//         return JSON.parse(data);
+//     } catch (err) {
+//         console.error("Error reading JSON file:", err);
+//         return {};
+//     }
+// }
+
+// // Function to write JSON to a file
+// function writeJSONToFile(fileName, data) {
+//     try {
+//         fs.writeFileSync(fileName, JSON.stringify(data, null, 2), 'utf8');
+//     } catch (err) {
+//         console.error("Error writing JSON file:", err);
+//     }
+// }
+
+// export { updateCellData };

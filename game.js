@@ -1,7 +1,7 @@
 // Import the JSON file for snap positions
 import snapPositions from './positions/snapPositions.json';
 import { playClickSound ,playSnapSound} from './SoundManager';
-import { placeSpriteOnTop,getSpritesInCell } from './gameLogic';
+// import { placeSpriteOnTop,getSpritesInCell } from './gameLogic';
 // import { currentlySelectedSprite } from './main';
 
 //incase of any error, please check the cenyres for calculation of 1,2,3,4....
@@ -11,9 +11,9 @@ const player2_center = { x: 1045, y: 360 };
 
 let currentlySelectedSprite = null; // To track the currently selected sprite
 
-
-
 const snapThreshold = 60;// for snapping the cones on the grid
+//onselecting the sprite, it appears 6 more than the current depth
+const selectedDepthOffset = 30;
 
 
 // Function to handle dragging of sprites
@@ -67,10 +67,20 @@ export function onDragEnd(pointer, gameObject) {
         // Deselect the sprite after snapping
         clearCurrentlySelectedSprite();
         removeClickEffect(gameObject);
+
+
+        // Log the sprite's depth after snapping to the cell
+        console.log(`Sprite snapped to cell. Depth after snapping: ${gameObject.depth}`);
     } else {
         // Return to the initial position if not within snapping range
         gameObject.x = gameObject.input.dragStartX;
         gameObject.y = gameObject.input.dragStartY;
+    }
+
+    // Revert depth to the original value after dragging ends
+    const originalDepth = gameObject.getData('originalDepth');
+    if (originalDepth !== undefined) {
+        gameObject.setDepth(originalDepth);
     }
 }
 
@@ -147,6 +157,12 @@ function deselectSprite(sprite) {
     sprite.setData('clicked', false);
     clearCurrentlySelectedSprite();
 
+    // Revert depth to the original value
+    const originalDepth = sprite.getData('originalDepth');
+    if (originalDepth !== undefined) {
+        sprite.setDepth(originalDepth);
+    }
+
     // Log the state of the currently selected sprite after deselection
     const newSelectedSprite = getCurrentlySelectedSprite();
     console.log('Currently selected sprite after deselection:', newSelectedSprite ? newSelectedSprite.name : 'null');
@@ -167,6 +183,11 @@ function toggleSpriteSelection(sprite) {
         sprite.setData('clicked', true);
         currentlySelectedSprite = sprite;
 
+        // Store the original depth and set depth for the selected sprite
+        const originalDepth = sprite.depth;
+        sprite.setData('originalDepth', originalDepth);
+        sprite.setDepth(originalDepth + selectedDepthOffset);
+
         // Set up a global click listener to handle deselection
         sprite.scene.input.once('pointerdown', (pointer) => {
             if (!sprite.getBounds().contains(pointer.x, pointer.y) && !isClickInsideCell(pointer.x, pointer.y)) {
@@ -176,7 +197,6 @@ function toggleSpriteSelection(sprite) {
         });
     }
 }
-
 // Utility function to check if a click is inside a cell
 function isClickInsideCell(x, y) {
     for (const color in snapPositions) {
